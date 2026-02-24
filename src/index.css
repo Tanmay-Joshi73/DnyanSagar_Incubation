@@ -1,0 +1,224 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Google Fonts + Base ─────────────────────────── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    cursor: none;
+  }
+
+  body {
+    @apply bg-ivory text-ink font-body antialiased overflow-x-hidden;
+  }
+
+  ::selection {
+    @apply bg-gold text-white;
+  }
+}
+
+/* ── Custom cursor ───────────────────────────────── */
+@layer components {
+  .cursor-dot {
+    @apply fixed w-2 h-2 bg-ink rounded-full pointer-events-none z-[9999];
+    transform: translate(-50%, -50%);
+    mix-blend-mode: multiply;
+    transition: width 0.2s, height 0.2s, background 0.2s;
+  }
+
+  .cursor-ring {
+    @apply fixed w-9 h-9 border border-ink/20 rounded-full pointer-events-none z-[9998];
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s, border-color 0.3s;
+  }
+
+  body.hovering .cursor-dot {
+    @apply w-4 h-4 bg-gold;
+  }
+
+  body.hovering .cursor-ring {
+    @apply w-14 h-14 border-gold-lt;
+    opacity: 0.7;
+  }
+
+  /* ── Reveal animation ──────────────────────────── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(22px);
+    transition: opacity 0.75s ease, transform 0.75s ease;
+  }
+  .reveal.in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-d1 { transition-delay: 0.1s; }
+  .reveal-d2 { transition-delay: 0.2s; }
+  .reveal-d3 { transition-delay: 0.3s; }
+  .reveal-d4 { transition-delay: 0.4s; }
+  .reveal-d5 { transition-delay: 0.5s; }
+
+  /* ── Headline line animation ───────────────────── */
+  .hl-wrap { display: block; overflow: hidden; }
+  .hl-inner {
+    display: block;
+    transform: translateY(110%);
+    animation: lineReveal 0.95s ease forwards;
+  }
+
+  /* ── Ticker ────────────────────────────────────── */
+  .ticker-track {
+    display: inline-flex;
+    animation: tickMove 34s linear infinite;
+  }
+  .ticker-wrap:hover .ticker-track {
+    animation-play-state: paused;
+  }
+
+  /* ── Orbit ring ────────────────────────────────── */
+  .orbit-ring {
+    position: absolute;
+    inset: -15px;
+    border-radius: 50%;
+    border: 1px dashed theme('colors.rule');
+    animation: spin 20s linear infinite;
+  }
+  .orbit-ring::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    width: 8px;
+    height: 8px;
+    background: theme('colors.gold');
+    border-radius: 50%;
+    transform: translateX(-50%);
+  }
+  .cta-orbit:hover .orbit-ring {
+    animation-duration: 5s;
+    border-color: theme('colors.sage');
+  }
+
+  /* ── CTA button fill ───────────────────────────── */
+  .cta-circle {
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-circle::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: theme('colors.forest');
+    transform: scale(0);
+    transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .cta-orbit:hover .cta-circle::before {
+    transform: scale(1);
+  }
+  .cta-orbit:hover .cta-circle {
+    border-color: theme('colors.forest');
+  }
+  .cta-orbit:hover .cta-text {
+    color: white;
+  }
+
+  /* ── Scan line ─────────────────────────────────── */
+  .scan-line {
+    position: relative;
+    overflow: hidden;
+  }
+  .scan-line::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 1px;
+    background: theme('colors.gold');
+    animation: scanLine 2.5s 2.2s ease-in-out infinite;
+  }
+
+  /* ── Section label ─────────────────────────────── */
+  .section-label {
+    @apply font-mono text-[0.6rem] tracking-[0.22em] uppercase text-gold;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .section-label::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: theme('colors.gold');
+    flex-shrink: 0;
+  }
+
+  /* ── Feat hover link ───────────────────────────── */
+  .feat-link {
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.3s, transform 0.3s, color 0.2s, border-color 0.2s;
+  }
+  .feat-card:hover .feat-link {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── Article hover ─────────────────────────────── */
+  .article-row {
+    transition: padding-left 0.3s ease;
+  }
+  .article-row:hover {
+    padding-left: 16px;
+  }
+
+  /* ── Step tag hover ────────────────────────────── */
+  .step-tag {
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .step-card:hover .step-tag {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .step-card:hover .step-dot {
+    border-color: theme('colors.gold');
+    background: theme('colors.gold-bg');
+  }
+  .step-card:hover .step-num {
+    color: theme('colors.gold');
+  }
+  .step-card:hover .step-title {
+    color: theme('colors.gold');
+  }
+}
+
+/* ── Keyframes ───────────────────────────────────── */
+@keyframes tickMove {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes scanLine {
+  0%   { left: -100%; }
+  60%  { left: 100%;  }
+  100% { left: 100%;  }
+}
+@keyframes lineReveal {
+  from { transform: translateY(110%); }
+  to   { transform: translateY(0); }
+}
+@keyframes floatIn {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
