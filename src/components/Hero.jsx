@@ -1,51 +1,33 @@
 import { useRef } from 'react'
-import { useMagnetic, useParallax } from '../hooks/useAnimations'
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   KEY FIXES:
-   1. Headline font-size reduced so it fits inside its grid column cleanly.
-      No more bleeding past the column boundary.
-   2. Cards moved OUTSIDE the headline column entirely — they live in a
-      dedicated absolute wrapper that is positioned to the RIGHT of the
-      headline text, flush against the left edge of the right sidebar gap.
-   3. Cards are spaced with explicit top values so they never overlap.
-   4. Right sidebar has overflow:hidden so nothing bleeds in from the left.
-   5. All three cards have distinct, non-overlapping vertical positions.
+   CHANGES APPLIED:
+   1. Headline block expanded to 70–72% canvas — text IS the layout
+   2. Floating cards removed; replaced with a hairline architectural divider
+   3. Secondary statement added below anchor line ("Operators, engineers…")
+   4. Right panel unified into a single vertical narrative (label→para→CTA→stats)
+   5. CTA circle gains a faint radial aura (opacity 0.05)
+   6. Scroll hint repositioned near the vertical axis
 ───────────────────────────────────────────────────────────────────────────── */
-
-/* ── Floating editorial image card ──────────────── */
-function FloatImg({ style, tag, num, children, depth, rotate }) {
-  return (
-    <div
-      className="absolute rounded-[10px] overflow-hidden shadow-float
-        hover:shadow-float-lg hover:z-10 transition-shadow duration-400"
-      style={style}
-      data-parallax={depth}
-      data-rotate={rotate}
-    >
-      {children}
-      <span className="absolute top-[10px] left-[11px] font-mono text-[0.5rem] tracking-[0.14em] uppercase text-ink/40">
-        {tag}
-      </span>
-      <span className="absolute bottom-[10px] right-[12px] font-display text-[1.6rem] font-bold text-ink/10">
-        {num}
-      </span>
-    </div>
-  )
-}
 
 /* ── Tagline bar ─────────────── */
 function TaglineBar() {
   const segments = ['Venture Studio', 'Early Stage', 'Hands-On Capital']
   return (
     <div
-      className="flex items-center gap-[10px] mb-6 opacity-0"
-      style={{ animation: 'fadeUp 0.5s 0.05s ease forwards' }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        marginBottom: '24px',
+        opacity: 0,
+        animation: 'fadeUp 0.5s 0.05s ease forwards',
+      }}
     >
       {segments.map((seg, i) => (
-        <span key={seg} className="flex items-center gap-[10px]">
+        <span key={seg} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{
-            fontFamily: 'monospace',
+            fontFamily: "'DM Mono', monospace",
             fontSize: '11px',
             letterSpacing: '0.2em',
             textTransform: 'uppercase',
@@ -69,7 +51,7 @@ function TaglineBar() {
   )
 }
 
-/* ── Ghost network — opacity 0.03, anchored below AMBITIONS ── */
+/* ── Ghost network backdrop ──── */
 function NetworkBackdrop() {
   return (
     <svg
@@ -77,7 +59,7 @@ function NetworkBackdrop() {
       style={{
         position: 'absolute',
         left: '-20px',
-        top: '55px',          /* sits under the baseline, not through letters */
+        top: '55px',
         width: '380px',
         height: '170px',
         opacity: 0.03,
@@ -104,337 +86,429 @@ function NetworkBackdrop() {
   )
 }
 
+/* ── Headline word reveal ──────── */
+function HLWord({ children, delay, italic, gold, indent }) {
+  return (
+    <span style={{
+      display: 'block',
+      /* overflow:hidden clips italic ascenders and pushes the line up visually.
+         Removing it fixes the AMBITIONS vertical shift entirely. */
+      overflow: 'visible',
+      /* Compensate for DM Serif Display italic's extra internal leading */
+      marginTop: italic ? '-0.04em' : undefined,
+      marginBottom: italic ? '-0.02em' : undefined,
+    }}>
+      <span style={{
+        display: 'block',
+        opacity: 0,
+        animation: `fadeUp 0.65s ${delay}s cubic-bezier(0.22,1,0.36,1) forwards`,
+        fontStyle: italic ? 'italic' : 'normal',
+        color: gold ? '#B8954A' : undefined,
+        paddingLeft: indent ? '0.06em' : undefined,
+        verticalAlign: 'baseline',
+      }}>
+        {children}
+      </span>
+    </span>
+  )
+}
+
 export default function Hero() {
   const orbitRef = useRef(null)
-  useMagnetic(orbitRef)
-  useParallax()
 
   return (
-    <section className="pt-[calc(72px+96px)] pb-[100px] bg-ivory relative overflow-hidden">
+    <>
+      {/* ── Keyframes + font import ── */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
 
-      {/* Gold ambient glow */}
-      <div className="absolute top-0 right-0 w-[420px] h-[420px] pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse at top right, #FBF6EC 0%, transparent 70%)' }}
-      />
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(14px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes spinSlow {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        @keyframes pulseAura {
+          0%, 100% { opacity: 0.04; transform: scale(1); }
+          50%       { opacity: 0.07; transform: scale(1.04); }
+        }
 
-      <div className="max-w-container mx-auto px-[52px]">
+        .hero-section *,
+        .hero-section *::before,
+        .hero-section *::after {
+          box-sizing: border-box;
+        }
 
-        {/*
-          LAYOUT:
-          - Col 1: headline text block — fixed max-width so type never bleeds
-          - Col 2: right sidebar — fixed 280px
-          - The floating cards live in an absolutely-positioned cluster
-            that sits in the GAP between col1 and col2, overlapping neither
-        */}
-        <div
-          className="relative"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 280px',
-            gap: '0 80px',
-            alignItems: 'start',
-          }}
-        >
+        /* Orbit ring spinner */
+        .orbit-ring {
+          position: absolute;
+          inset: -12px;
+          border-radius: 50%;
+          border: 1px dashed rgba(12,12,11,0.12);
+          animation: spinSlow 18s linear infinite;
+        }
 
-          {/* ── LEFT: Headline column ─────────────────────────────── */}
-          <div style={{ position: 'relative', minWidth: 0 }}>
+        /* Scroll hint scan line */
+        @keyframes scanPulse {
+          0%, 100% { width: 48px; opacity: 0.5; }
+          50%       { width: 72px; opacity: 1; }
+        }
+        .scan-line {
+          height: 1px;
+          background: #E7E3DB;
+          animation: scanPulse 2.8s ease-in-out infinite;
+        }
+      `}</style>
 
-            {/* Eyebrow */}
-            <div className="flex items-center gap-4 mb-7 opacity-0"
-              style={{ animation: 'fadeUp 0.6s 0.1s ease forwards' }}>
-              <span className="bg-forest-bg border border-sage px-[14px] py-[5px] rounded-sm
-                font-mono text-[0.58rem] tracking-[0.18em] uppercase text-forest">
-                Venture Studio
-              </span>
-              <div className="w-[1px] h-[14px] bg-rule" />
-              <span className="font-mono text-[0.58rem] tracking-[0.14em] text-ink-50">
-                Est. 2014 — San Francisco
-              </span>
-            </div>
+      <section
+        className="hero-section"
+        style={{
+          paddingTop: 'calc(72px + 80px)',
+          paddingBottom: '100px',
+          background: '#F8F6F1',
+          position: 'relative',
+          overflow: 'hidden',
+          fontFamily: "'DM Sans', sans-serif",
+        }}
+      >
+        {/* Gold ambient glow — top right */}
+        <div style={{
+          position: 'absolute',
+          top: 0, right: 0,
+          width: '480px', height: '480px',
+          background: 'radial-gradient(ellipse at top right, #FBF6EC 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }} />
 
-            {/* Tagline */}
-            <TaglineBar />
-
-            {/*
-              HEADLINE
-              - clamp() capped lower: max 7.5rem keeps it inside the column
-              - lineHeight 0.88 = tight luxury stack
-              - paddingRight 200px creates a clear whitespace corridor on the
-                right where the cards will float — they never touch letters
-            */}
-            <h1
-              className="font-display font-bold uppercase"
-              style={{
-                fontSize: 'clamp(3.6rem, 7vw, 7.5rem)',
-                lineHeight: 0.88,
-                letterSpacing: '-0.02em',
-                /*
-                  Right padding = card width (130px) + breathing gap (40px).
-                  This carves the whitespace pocket the cards float in.
-                */
-                paddingRight: '170px',
-                marginBottom: 0,
-              }}
-            >
-              <span className="hl-wrap" style={{ display: 'block' }}>
-                <span className="hl-inner" style={{ animationDelay: '0.28s' }} data-scramble>
-                  Business
-                </span>
-              </span>
-
-              <span className="hl-wrap relative" style={{ display: 'block' }}>
-                <NetworkBackdrop />
-                <span className="hl-inner italic text-ink-80 pl-[0.1em] relative"
-                  style={{ animationDelay: '0.44s', zIndex: 1 }} data-scramble>
-                  Ambitions
-                </span>
-              </span>
-
-              <span className="hl-wrap" style={{ display: 'block' }}>
-                <span className="hl-inner" style={{ animationDelay: '0.60s' }} data-scramble>
-                  Turned
-                </span>
-              </span>
-
-              <span className="hl-wrap" style={{ display: 'block' }}>
-                <span className="hl-inner" style={{ animationDelay: '0.72s' }} data-scramble>
-                  <span className="text-gold">Real.</span>
-                </span>
-              </span>
-            </h1>
-
-            {/* Anchor line — tight to REAL, signature-style */}
-            <p className="opacity-0" style={{
-              animation: 'fadeUp 0.6s 0.78s ease forwards',
-              fontSize: '16px',
-              color: 'rgba(12,12,11,0.40)',
-              maxWidth: '420px',
-              lineHeight: 1.5,
-              marginTop: '14px',
-              marginBottom: 0,
-            }}>
-              We co-build technology companies from zero to funded.
-            </p>
-          </div>
-
-          {/* ── RIGHT: Sidebar ────────────────────────────────────── */}
-          <div
-            className="pt-14 border-l border-rule flex-col opacity-0 lg:flex hidden"
-            style={{
-              paddingLeft: '36px',
-              animation: 'fadeUp 0.8s 0.95s ease forwards',
-              /*
-                overflow hidden stops anything from the left column
-                bleeding into this column
-              */
-              overflow: 'hidden',
-            }}
-          >
-            <p className="section-label mb-[14px]">Our Mandate</p>
-
-            <p className="font-body leading-[1.78] text-ink-50 mb-0"
-              style={{ fontSize: '0.86rem', maxWidth: '240px' }}>
-              We partner with <strong className="text-ink font-medium">exceptional founders</strong> at
-              the earliest stage — providing capital, product infrastructure, and an operator network
-              built for velocity. Not trends. <strong className="text-ink font-medium">Conviction.</strong>
-            </p>
-
-            {/* CTA — below paragraph, above stats */}
-            <div className="cta-orbit relative w-[128px] h-[128px]"
-              style={{ marginTop: '28px' }}
-              ref={orbitRef}
-            >
-              <div className="orbit-ring" />
-              <a href="#"
-                className="cta-circle mag-target w-[128px] h-[128px] border-[1.5px] border-ink
-                  rounded-full flex items-center justify-center flex-col gap-[3px]
-                  no-underline cursor-none transition-colors duration-300"
-              >
-                <svg aria-hidden="true" style={{
-                  position: 'absolute', inset: 0, width: '100%', height: '100%',
-                  opacity: 0.18, pointerEvents: 'none',
-                }} viewBox="0 0 128 128" fill="none">
-                  <path d="M 64 5 A 59 59 0 0 1 123 64"
-                    stroke="#B8954A" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-
-                {['ENTER', 'THE', 'STUDIO'].map((word, i) => (
-                  <span key={word}
-                    className="font-mono uppercase relative z-10 transition-colors duration-300"
-                    style={{
-                      fontSize: i === 1 ? '0.47rem' : '0.57rem',
-                      letterSpacing: '0.18em',
-                      lineHeight: 1.3,
-                      opacity: 0,
-                      animation: `fadeUp 0.4s ${0.95 + i * 0.08}s ease forwards`,
-                    }}
-                  >
-                    {word}
-                  </span>
-                ))}
-              </a>
-            </div>
-
-            {/* Stats */}
-            <div className="pt-6 border-t border-rule flex gap-6" style={{ marginTop: '28px' }}>
-              {[
-                { count: '480', sfx: 'M', dec: '0', label: 'AUM' },
-                { count: '75', sfx: '+', dec: '0', label: 'Startups' },
-                { count: '4.2', sfx: '×', dec: '1', label: 'Avg. MOIC' },
-              ].map((s) => (
-                <div key={s.label}>
-                  <div className="font-display font-bold leading-none tracking-[-0.02em] text-ink"
-                    style={{ fontSize: '1.55rem' }}
-                    data-count={s.count} data-sfx={s.sfx} data-dec={s.dec}>
-                    —
-                  </div>
-                  <div className="font-mono tracking-[0.15em] uppercase text-ink-50 mt-[5px]"
-                    style={{ fontSize: '0.49rem' }}>
-                    {s.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '0 44px',           /* tighter padding → more headline room */
+        }}>
 
           {/*
-            ── FLOATING CARD CLUSTER ─────────────────────────────────────────
-            Absolutely positioned relative to the grid wrapper.
-            Cards sit in the paddingRight corridor of the headline column.
-
-            Measurements (at ~1280px viewport):
-            - Left column is roughly 1fr of (viewport - 52px*2 - 80px gap - 280px sidebar)
-            - paddingRight: 170px on headline carves a 170px wide corridor
-            - Cards (130px wide) sit within that corridor
-
-            We position from the right edge of the grid:
-              right = sidebarWidth(280) + gap(80) + some offset from right
-
-            Cards are vertically distributed across the full headline height
-            with explicit gaps so they NEVER overlap each other.
-
-            Card heights: 188, 148, 168 = 504px total
-            Spacing between cards: 16px each
-            Total span: ~536px — matches headline block height
-
-            No z-index clash with sidebar because sidebar has overflow:hidden.
+            GRID:
+            Left:  ~65% → headline commands the canvas
+            Right: 340px → substantial panel with visual weight to balance headline
+            Divider: the 1px hairline lives on the border-left of the right col
           */}
-          <div
-            aria-hidden="true"
-            style={{
-              position: 'absolute',
-              /*
-                Position the cluster so it sits in the right edge of
-                the headline column's paddingRight corridor.
-                right: 280px(sidebar) + 80px(gap) + 8px(breathing) = 368px
-                But since cards are 130px wide and corridor is 170px,
-                center them: right = 368 + (170-130)/2 = 388px
-              */
-              right: '388px',
-              top: '0',
-              width: '134px',
-              /* tall enough to hold all cards without clipping */
-              height: '600px',
-              /* cards position themselves absolutely within this */
-              pointerEvents: 'none',
-            }}
-          >
-            {/* Card 1 — Session 04 (blue-green) — TOP */}
-            <FloatImg
-              style={{
-                position: 'absolute',
-                top: '0px',
-                left: '0',
-                width: '130px',
-                height: '170px',
-                transform: 'rotate(-2.5deg)',
-                animation: 'floatIn 0.9s 0.85s ease both',
-                pointerEvents: 'auto',
-              }}
-              tag="Session 04" num="01" depth="6" rotate="-2.5"
-            >
-              <div className="w-full h-full bg-forest-bg relative">
-                <svg width="130" height="170" viewBox="0 0 152 200" fill="none" className="absolute bottom-0 left-0">
-                  <rect x="22" y="130" width="108" height="6" rx="2" fill="rgba(30,52,38,.08)" />
-                  <rect x="36" y="90" width="80" height="50" rx="6" fill="rgba(30,52,38,.10)" />
-                  <rect x="40" y="94" width="72" height="42" rx="4" fill="rgba(30,52,38,.06)" />
-                  <rect x="46" y="101" width="44" height="2" rx="1" fill="rgba(30,52,38,.15)" />
-                  <rect x="46" y="108" width="36" height="2" rx="1" fill="rgba(184,149,74,.40)" />
-                  <rect x="46" y="115" width="40" height="2" rx="1" fill="rgba(30,52,38,.10)" />
-                  <ellipse cx="76" cy="64" rx="16" ry="18" fill="rgba(30,52,38,.10)" />
-                </svg>
-              </div>
-            </FloatImg>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 360px',
+            gap: '0 0',
+            alignItems: 'center',      /* vertically center both columns */
+            position: 'relative',
+          }}>
 
-            {/* Card 2 — Q2 Growth (gold) — MIDDLE: top(170) + gap(16) = 186 */}
-            <FloatImg
-              style={{
-                position: 'absolute',
-                top: '186px',
-                left: '0',
-                width: '112px',
-                height: '144px',
-                transform: 'rotate(3.2deg)',
-                animation: 'floatIn 0.9s 1.05s ease both',
-                pointerEvents: 'auto',
-              }}
-              tag="Q2 Growth" num="62" depth="10" rotate="3.2"
-            >
-              <div className="w-full h-full bg-gold-bg relative">
-                <svg width="112" height="144" viewBox="0 0 122 158" fill="none" className="absolute bottom-0 left-0">
-                  <rect x="10" y="100" width="12" height="44" rx="2" fill="rgba(184,149,74,.20)" />
-                  <rect x="28" y="80" width="12" height="64" rx="2" fill="rgba(184,149,74,.30)" />
-                  <rect x="46" y="60" width="12" height="84" rx="2" fill="rgba(184,149,74,.40)" />
-                  <rect x="64" y="44" width="12" height="100" rx="2" fill="rgba(184,149,74,.55)" />
-                  <rect x="82" y="28" width="12" height="116" rx="2" fill="rgba(184,149,74,.65)" />
-                  <rect x="100" y="16" width="12" height="128" rx="2" fill="rgba(184,149,74,.78)" />
-                  <line x1="8" y1="144" x2="114" y2="144" stroke="rgba(184,149,74,.20)" strokeWidth="1" />
-                </svg>
-              </div>
-            </FloatImg>
+            {/* ════════════════════════════════════════════
+                LEFT — Headline block
+                ════════════════════════════════════════════ */}
+            <div style={{ position: 'relative', minWidth: 0, paddingRight: '60px' }}>
 
-            {/* Card 3 — Network (beige) — BOTTOM: 186 + 144 + gap(16) = 346 */}
-            <FloatImg
-              style={{
-                position: 'absolute',
-                top: '346px',
-                left: '0',
-                width: '124px',
-                height: '158px',
-                transform: 'rotate(-1.8deg)',
-                animation: 'floatIn 0.9s 1.25s ease both',
-                pointerEvents: 'auto',
-              }}
-              tag="Network" num="14×" depth="8" rotate="-1.8"
-            >
-              <div className="w-full h-full bg-ivory-dd relative">
-                <svg width="124" height="158" viewBox="0 0 140 178" fill="none" className="absolute inset-0">
-                  <circle cx="70" cy="60" r="7" fill="rgba(12,12,11,.12)" />
-                  <circle cx="30" cy="100" r="5" fill="rgba(30,52,38,.15)" />
-                  <circle cx="110" cy="100" r="5" fill="rgba(30,52,38,.15)" />
-                  <circle cx="50" cy="148" r="4" fill="rgba(184,149,74,.50)" />
-                  <circle cx="90" cy="148" r="4" fill="rgba(184,149,74,.40)" />
-                  <line x1="70" y1="60" x2="30" y2="100" stroke="rgba(12,12,11,.08)" strokeWidth="1" />
-                  <line x1="70" y1="60" x2="110" y2="100" stroke="rgba(12,12,11,.08)" strokeWidth="1" />
-                  <line x1="30" y1="100" x2="50" y2="148" stroke="rgba(184,149,74,.25)" strokeWidth="1" />
-                  <line x1="110" y1="100" x2="90" y2="148" stroke="rgba(184,149,74,.25)" strokeWidth="1" />
-                  <line x1="30" y1="100" x2="90" y2="148" stroke="rgba(12,12,11,.05)" strokeWidth="1" strokeDasharray="3 3" />
-                </svg>
+              {/* Eyebrow */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                marginBottom: '28px',
+                opacity: 0,
+                animation: 'fadeUp 0.6s 0.1s ease forwards',
+              }}>
+                <span style={{
+                  background: 'rgba(30,52,38,0.06)',
+                  border: '1px solid rgba(30,52,38,0.14)',
+                  padding: '5px 14px',
+                  borderRadius: '2px',
+                  fontFamily: "'DM Mono', monospace",
+                  fontSize: '0.58rem',
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  color: '#1E3426',
+                }}>
+                  Venture Studio
+                </span>
+                <div style={{ width: '1px', height: '14px', background: '#E7E3DB' }} />
+                <span style={{
+                  fontFamily: "'DM Mono', monospace",
+                  fontSize: '0.58rem',
+                  letterSpacing: '0.14em',
+                  color: 'rgba(12,12,11,0.45)',
+                }}>
+                  Est. 2014 — San Francisco
+                </span>
               </div>
-            </FloatImg>
+
+              <TaglineBar />
+
+              {/*
+                HEADLINE
+                clamp max bumped to 8.5rem — text IS the layout.
+                No paddingRight needed — cards gone; right col handles its own space.
+                lineHeight 0.865 = tight luxury stack.
+              */}
+              <h1 style={{
+                fontFamily: "'DM Serif Display', Georgia, serif",
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                fontSize: 'clamp(4rem, 7.5vw, 8.5rem)',
+                lineHeight: 0.865,
+                letterSpacing: '-0.025em',
+                margin: 0,
+                marginBottom: 0,
+                color: '#0C0C0B',
+              }}>
+                <HLWord delay={0.28}>Business</HLWord>
+
+                <span style={{ display: 'block', position: 'relative' }}>
+                  <NetworkBackdrop />
+                  <HLWord delay={0.44} italic indent>Ambitions</HLWord>
+                </span>
+
+                <HLWord delay={0.60}>Turned</HLWord>
+                <HLWord delay={0.72} gold>Real.</HLWord>
+              </h1>
+
+              {/* Primary anchor */}
+              <p style={{
+                opacity: 0,
+                animation: 'fadeUp 0.6s 0.82s ease forwards',
+                fontSize: '16px',
+                color: 'rgba(12,12,11,0.42)',
+                maxWidth: '420px',
+                lineHeight: 1.56,
+                marginTop: '18px',
+                marginBottom: 0,
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                We co-build technology companies from zero to funded.
+              </p>
+
+              {/* Step 3 — Secondary authority statement */}
+              <p style={{
+                opacity: 0,
+                animation: 'fadeUp 0.6s 0.96s ease forwards',
+                fontSize: '14px',
+                color: 'rgba(12,12,11,0.30)',
+                maxWidth: '400px',
+                lineHeight: 1.6,
+                marginTop: '10px',
+                marginBottom: 0,
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: 300,
+              }}>
+                Operators, engineers, and repeat founders<br />
+                working beside you from day one.
+              </p>
+
+              {/* Step 6 — Scroll hint near the vertical divider axis */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '18px',
+                marginTop: '56px',
+                opacity: 0,
+                animation: 'fadeUp 0.6s 1.45s ease forwards',
+                paddingLeft: '2px',
+              }}>
+                <div className="scan-line" />
+                <span style={{
+                  fontFamily: "'DM Mono', monospace",
+                  fontSize: '0.56rem',
+                  letterSpacing: '0.2em',
+                  textTransform: 'uppercase',
+                  color: 'rgba(12,12,11,0.20)',
+                }}>
+                  Scroll to explore
+                </span>
+              </div>
+            </div>
+
+            {/* ════════════════════════════════════════════
+                RIGHT — Unified narrative panel
+                Step 2: 1px hairline divider (border-left)
+                Step 4: single vertical rhythm: label → para → CTA → stats
+                ════════════════════════════════════════════ */}
+            <div
+              style={{
+                paddingLeft: '56px',
+                paddingTop: '0',          /* grid center handles vertical alignment */
+                paddingBottom: '0',
+                borderLeft: '1px solid rgba(231,227,219,0.7)',
+                opacity: 0,
+                animation: 'fadeUp 0.8s 0.95s ease forwards',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+              }}
+            >
+              {/* Label */}
+              <p style={{
+                fontFamily: "'DM Mono', monospace",
+                fontSize: '0.62rem',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color: 'rgba(12,12,11,0.28)',
+                margin: '0 0 20px 0',
+              }}>
+                Our Mandate
+              </p>
+
+              {/* Paragraph — full width of the column, larger */}
+              <p style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: '1.05rem',
+                lineHeight: 1.78,
+                color: 'rgba(12,12,11,0.52)',
+                maxWidth: '295px',
+                margin: 0,
+              }}>
+                We partner with{' '}
+                <strong style={{ color: '#0C0C0B', fontWeight: 600 }}>exceptional founders</strong>
+                {' '}at the earliest stage — providing capital, product infrastructure, and an operator
+                network built for velocity. Not trends.{' '}
+                <strong style={{ color: '#0C0C0B', fontWeight: 600 }}>Conviction.</strong>
+              </p>
+
+              {/* CTA circle — 168px, properly contained */}
+              <div style={{ marginTop: '36px', position: 'relative' }} ref={orbitRef}>
+
+                {/* Radial aura — clipped so it doesn't bleed outside */}
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  width: '320px',
+                  height: '320px',
+                  transform: 'translate(-50%, -50%)',
+                  borderRadius: '50%',
+                  background: 'radial-gradient(circle, rgba(184,149,74,0.6) 0%, transparent 68%)',
+                  opacity: 0.06,
+                  pointerEvents: 'none',
+                  animation: 'pulseAura 4s ease-in-out infinite',
+                }} />
+
+                {/* Orbit container — sized to circle + ring overflow */}
+                <div style={{
+                  position: 'relative',
+                  width: '168px',
+                  height: '168px',
+                }}>
+                  {/* Dashed orbit ring — inset negative so it rings outside */}
+                  <div style={{
+                    position: 'absolute',
+                    inset: '-14px',
+                    borderRadius: '50%',
+                    border: '1px dashed rgba(12,12,11,0.10)',
+                    animation: 'spinSlow 20s linear infinite',
+                    pointerEvents: 'none',
+                  }} />
+
+                  {/* Gold dot on the ring — positioned at top-right of orbit */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '-14px',
+                    left: '50%',
+                    width: '7px',
+                    height: '7px',
+                    borderRadius: '50%',
+                    background: '#B8954A',
+                    transform: 'translateX(-50%)',
+                    boxShadow: '0 0 6px rgba(184,149,74,0.5)',
+                  }} />
+
+                  <a
+                    href="#"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      border: '1.5px solid rgba(12,12,11,0.75)',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '5px',
+                      textDecoration: 'none',
+                      cursor: 'pointer',
+                      transition: 'border-color 0.3s, background 0.3s',
+                      background: 'transparent',
+                    }}
+                  >
+                    {/* Gold arc inside circle */}
+                    <svg aria-hidden="true" style={{
+                      position: 'absolute', inset: 0,
+                      width: '100%', height: '100%',
+                      opacity: 0.22, pointerEvents: 'none',
+                    }} viewBox="0 0 168 168" fill="none">
+                      <path d="M 84 6 A 78 78 0 0 1 162 84"
+                        stroke="#B8954A" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+
+                    {['ENTER', 'THE', 'STUDIO'].map((word, i) => (
+                      <span key={word} style={{
+                        fontFamily: "'DM Mono', monospace",
+                        textTransform: 'uppercase',
+                        fontSize: i === 1 ? '0.55rem' : '0.68rem',
+                        letterSpacing: '0.2em',
+                        lineHeight: 1.2,
+                        color: '#0C0C0B',
+                        opacity: 0,
+                        animation: `fadeUp 0.4s ${0.98 + i * 0.08}s ease forwards`,
+                        position: 'relative',
+                        zIndex: 1,
+                      }}>
+                        {word}
+                      </span>
+                    ))}
+                  </a>
+                </div>
+              </div>
+
+              {/* Stats — bigger numbers, more generous spacing */}
+              <div style={{
+                marginTop: '48px',
+                paddingTop: '28px',
+                borderTop: '1px solid #E7E3DB',
+                display: 'flex',
+                gap: '36px',
+                width: '100%',
+              }}>
+                {[
+                  { count: '480', sfx: 'M', label: 'AUM' },
+                  { count: '75', sfx: '+', label: 'Startups' },
+                  { count: '4.2', sfx: '×', label: 'Avg. MOIC' },
+                ].map((s) => (
+                  <div key={s.label}>
+                    <div style={{
+                      fontFamily: "'DM Serif Display', serif",
+                      fontWeight: 700,
+                      fontSize: '2.1rem',
+                      lineHeight: 1,
+                      letterSpacing: '-0.025em',
+                      color: '#0C0C0B',
+                    }}>
+                      {s.count}<span style={{ fontSize: '1.2rem', letterSpacing: '-0.01em' }}>{s.sfx}</span>
+                    </div>
+                    <div style={{
+                      fontFamily: "'DM Mono', monospace",
+                      fontSize: '0.54rem',
+                      letterSpacing: '0.16em',
+                      textTransform: 'uppercase',
+                      color: 'rgba(12,12,11,0.38)',
+                      marginTop: '7px',
+                    }}>
+                      {s.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
-
         </div>
-
-        {/* Scroll hint */}
-        <div className="flex items-center gap-[18px] mt-14 opacity-0"
-          style={{ animation: 'fadeUp 0.6s 1.4s ease forwards' }}>
-          <div className="scan-line w-12 h-px bg-rule" />
-          <span className="font-mono text-[0.56rem] tracking-[0.2em] uppercase text-ink-20">
-            Scroll to explore
-          </span>
-        </div>
-      </div>
-    </section>
+      </section>
+    </>
   )
 }
